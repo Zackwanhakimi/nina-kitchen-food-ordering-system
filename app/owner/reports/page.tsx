@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Download, TrendingUp, ClipboardList, DollarSign } from 'lucide-react'
 import {
   Bar,
@@ -15,24 +16,37 @@ import {
 } from 'recharts'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/page-header'
 import { orders } from '@/lib/mock-data'
+import { cn } from '@/lib/utils'
+
+type ReportPeriod = 'daily' | 'weekly' | 'monthly'
 
 const weeklySales = [
-  { day: 'Mon', sales: 320 },
-  { day: 'Tue', sales: 410 },
-  { day: 'Wed', sales: 280 },
-  { day: 'Thu', sales: 520 },
-  { day: 'Fri', sales: 640 },
-  { day: 'Sat', sales: 780 },
-  { day: 'Sun', sales: 690 },
+  { day: 'Mon', sales: 120 },
+  { day: 'Tue', sales: 140 },
+  { day: 'Wed', sales: 130 },
+  { day: 'Thu', sales: 145 },
+  { day: 'Fri', sales: 160 },
+  { day: 'Sat', sales: 175 },
+  { day: 'Sun', sales: 0 },
+]
+
+const monthlySales = [
+  { month: 'Week 1', sales: 620 },
+  { month: 'Week 2', sales: 680 },
+  { month: 'Week 3', sales: 710 },
+  { month: 'Week 4', sales: 750 },
 ]
 
 const topDishes = [
-  { name: 'Nasi Lemak', value: 42 },
-  { name: 'Beef Rendang', value: 28 },
-  { name: 'Curry Laksa', value: 18 },
-  { name: 'Chicken Satay', value: 12 },
+  { name: 'Nasi Ayam Gepuk', value: 35 },
+  { name: 'Mi Kari', value: 20 },
+  { name: 'Indomie Ayam', value: 18 },
+  { name: 'Keli Gepuk', value: 12 },
+  { name: 'Lainnya', value: 15 },
 ]
 
 const pieColors = [
@@ -43,6 +57,11 @@ const pieColors = [
 ]
 
 export default function OwnerReportsPage() {
+  const [period, setPeriod] = useState<ReportPeriod>('weekly')
+  const [dailyDate, setDailyDate] = useState('2026-07-05')
+  const [weeklyDate, setWeeklyDate] = useState('2026-07-01')
+  const [monthlyMonth, setMonthlyMonth] = useState('2026-07')
+
   const revenue = orders
     .filter((o) => o.paymentStatus === 'Paid')
     .reduce((s, o) => s + o.total, 0)
@@ -61,6 +80,12 @@ export default function OwnerReportsPage() {
       icon: TrendingUp,
     },
   ]
+
+  const salesData = period === 'daily'
+    ? [{ day: dailyDate, sales: 450 }]
+    : period === 'weekly'
+    ? weeklySales
+    : monthlySales
 
   return (
     <>
@@ -96,22 +121,84 @@ export default function OwnerReportsPage() {
         })}
       </div>
 
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Report Period</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex gap-2">
+            {(['daily', 'weekly', 'monthly'] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={cn(
+                  'rounded-lg px-4 py-2 font-medium capitalize transition-colors',
+                  period === p
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-secondary',
+                )}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          {period === 'daily' && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="daily-date">Select date</Label>
+              <Input
+                id="daily-date"
+                type="date"
+                value={dailyDate}
+                onChange={(e) => setDailyDate(e.target.value)}
+              />
+            </div>
+          )}
+
+          {period === 'weekly' && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="weekly-date">Week starting</Label>
+              <Input
+                id="weekly-date"
+                type="date"
+                value={weeklyDate}
+                onChange={(e) => setWeeklyDate(e.target.value)}
+              />
+            </div>
+          )}
+
+          {period === 'monthly' && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="monthly-month">Month</Label>
+              <Input
+                id="monthly-month"
+                type="month"
+                value={monthlyMonth}
+                onChange={(e) => setMonthlyMonth(e.target.value)}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="mt-6 grid gap-6 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Weekly sales (RM)</CardTitle>
+            <CardTitle>
+              {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'} sales (RM)
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklySales}>
+                <BarChart data={salesData}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="var(--color-border)"
                     vertical={false}
                   />
                   <XAxis
-                    dataKey="day"
+                    dataKey={period === 'daily' ? 'day' : period === 'weekly' ? 'day' : 'month'}
                     stroke="var(--color-muted-foreground)"
                     fontSize={12}
                     tickLine={false}

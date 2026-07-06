@@ -3,20 +3,32 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Plus, Minus, ShoppingBag } from 'lucide-react'
+import { Plus, Minus, ShoppingBag, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/page-header'
 import { menuItems, type MenuItem } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
 
-const categories = ['All', 'Mains', 'Noodles', 'Sides', 'Dessert'] as const
+const categories = ['All', 'Makanan', 'Ais Batu Campur', 'Minuman'] as const
+
+type CartItem = {
+  itemId: string
+  quantity: number
+  spiceLevel?: string
+  notes?: string
+}
 
 export default function CustomerMenuPage() {
   const [category, setCategory] =
     useState<(typeof categories)[number]>('All')
-  const [cart, setCart] = useState<Record<string, number>>({})
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [selectedItemForOptions, setSelectedItemForOptions] = useState<string | null>(null)
+  const [spiceLevel, setSpiceLevel] = useState<string>('medium')
+  const [notes, setNotes] = useState<string>('')
 
   const filtered = useMemo(
     () =>
@@ -26,23 +38,124 @@ export default function CustomerMenuPage() {
     [category],
   )
 
-  const add = (item: MenuItem) =>
-    setCart((c) => ({ ...c, [item.id]: (c[item.id] ?? 0) + 1 }))
-  const remove = (item: MenuItem) =>
-    setCart((c) => {
-      const next = { ...c }
-      const qty = (next[item.id] ?? 0) - 1
-      if (qty <= 0) delete next[item.id]
-      else next[item.id] = qty
-      return next
-    })
+  const selectedItem = selectedItemForOptions
+    ? menuItems.find((m) => m.id === selectedItemForOptions)
+    : null
 
-  const cartItems = Object.entries(cart)
-  const totalItems = cartItems.reduce((s, [, q]) => s + q, 0)
-  const totalPrice = cartItems.reduce((s, [id, q]) => {
-    const item = menuItems.find((m) => m.id === id)
-    return s + (item ? item.price * q : 0)
+  const add = (item: MenuItem) => {
+    if (item.spiceLevels) {
+      setSelectedItemForOptions(item.id)
+    } else {
+      addToCart(item.id, item.spiceLevels ? spiceLevel : undefined, notes)
+      setNotes('')
+    }
+  }
+
+  const addToCart = (itemId: string, spiceLevel?: string, itemNotes?: string) => {
+    setCart((c) => [
+      ...c,
+      {
+        itemId,
+        quantity: 1,
+        spiceLevel,
+        notes: itemNotes,
+      },
+    ])
+    setSelectedItemForOptions(null)
+    setSpiceLevel('medium')
+    setNotes('')
+  }
+
+  const remove = (index: number) => {
+    setCart((c) => c.filter((_, i) => i !== index))
+  }
+
+  const updateQuantity = (index: number, delta: number) => {
+    setCart((c) => {
+      const newCart = [...c]
+      newCart[index].quantity = Math.max(0, newCart[index].quantity + delta)
+      return newCart.filter((item) => item.quantity > 0)
+    })
+  }
+
+  const totalItems = cart.reduce((s, item) => s + item.quantity, 0)
+  const totalPrice = cart.reduce((s, cartItem) => {
+    const item = menuItems.find((m) => m.id === cartItem.itemId)
+    return s + (item ? item.price * cartItem.quantity : 0)
   }, 0)
+
+  if (selectedItem) {
+    return (
+      <>
+        <PageHeader
+          title="Customize Item"
+          description={selectedItem.name}
+        />
+
+        <div className="mx-auto max-w-2xl rounded-lg border border-border bg-card p-6">
+          <div className="flex flex-col gap-6">
+            {selectedItem.spiceLevels && (
+              <div className="flex flex-col gap-3">
+                <Label className="text-base font-semibold">Spice Level</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  {['mild', 'medium', 'hot'].map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => setSpiceLevel(level)}
+                      className={cn(
+                        'rounded-lg border-2 px-4 py-2 font-medium capitalize transition-colors',
+                        spiceLevel === level
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-muted-foreground hover:border-primary/50',
+                      )}
+                    >
+                      {level}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="notes" className="text-base font-semibold">
+                Special Notes
+              </Label>
+              <textarea
+                id="notes"
+                placeholder="e.g., no nuts, no tempeh, extra sauce"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-24 rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder-muted-foreground"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setSelectedItemForOptions(null)
+                  setSpiceLevel('medium')
+                  setNotes('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() =>
+                  addToCart(selectedItem.id, spiceLevel, notes)
+                }
+              >
+                <Plus className="size-4" />
+                Add to cart
+              </Button>
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -70,7 +183,6 @@ export default function CustomerMenuPage() {
 
       <div className="grid gap-5 pb-28 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((item) => {
-          const qty = cart[item.id] ?? 0
           return (
             <Card key={item.id} className="flex flex-col overflow-hidden pt-0">
               <div className="relative aspect-[4/3] w-full">
@@ -100,34 +212,14 @@ export default function CustomerMenuPage() {
                 <p className="flex-1 text-sm text-muted-foreground text-pretty">
                   {item.description}
                 </p>
-                {qty === 0 ? (
-                  <Button
-                    className="mt-2 w-full"
-                    disabled={!item.available}
-                    onClick={() => add(item)}
-                  >
-                    <Plus className="size-4" />
-                    Add to cart
-                  </Button>
-                ) : (
-                  <div className="mt-2 flex items-center justify-between rounded-lg border border-border p-1">
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() => remove(item)}
-                    >
-                      <Minus className="size-4" />
-                    </Button>
-                    <span className="font-semibold">{qty}</span>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() => add(item)}
-                    >
-                      <Plus className="size-4" />
-                    </Button>
-                  </div>
-                )}
+                <Button
+                  className="mt-2 w-full"
+                  disabled={!item.available}
+                  onClick={() => add(item)}
+                >
+                  <Plus className="size-4" />
+                  Add to cart
+                </Button>
               </CardContent>
             </Card>
           )

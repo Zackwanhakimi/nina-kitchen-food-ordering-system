@@ -1,14 +1,27 @@
+'use client'
+
+import { Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthShell } from '@/components/auth-shell'
 
-export default function LoginPage() {
+function LoginContent() {
+  const searchParams = useSearchParams()
+  const role = searchParams.get('role') || 'customer'
+
+  const isAdmin = role === 'admin'
+
   return (
     <AuthShell
-      title="Welcome back"
-      subtitle="Log in to order food or manage your kitchen."
+      title={isAdmin ? 'Administrator Login' : 'Welcome back'}
+      subtitle={
+        isAdmin
+          ? 'Log in to manage your kitchen and orders.'
+          : 'Log in to order food.'
+      }
     >
       <form className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -28,19 +41,35 @@ export default function LoginPage() {
           <Input id="password" type="password" placeholder="••••••••" />
         </div>
 
-        <div className="mt-2 flex flex-col gap-2">
-          <Button size="lg" className="w-full" render={<Link href="/customer" />}>
-            Log in as Customer
-          </Button>
+        <Button
+          size="lg"
+          className="mt-2 w-full"
+          render={<Link href={isAdmin ? '/owner' : '/customer'} />}
+        >
+          {isAdmin ? 'Log in as Administrator' : 'Log in as Customer'}
+        </Button>
+
+        {!isAdmin && (
           <Button
             size="lg"
             variant="outline"
             className="w-full"
-            render={<Link href="/owner" />}
+            render={<Link href="/login?role=admin" />}
           >
-            Log in as Business Owner
+            Log in as Administrator
           </Button>
-        </div>
+        )}
+
+        {isAdmin && (
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full"
+            render={<Link href="/login" />}
+          >
+            Log in as Customer
+          </Button>
+        )}
       </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
@@ -50,5 +79,13 @@ export default function LoginPage() {
         </Link>
       </p>
     </AuthShell>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<AuthShell title="Loading..." />}>
+      <LoginContent />
+    </Suspense>
   )
 }

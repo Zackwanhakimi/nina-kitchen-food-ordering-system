@@ -14,7 +14,7 @@ export type NavItem = {
 }
 
 type DashboardShellProps = {
-  role: 'Customer' | 'Business Owner'
+  role: 'Customer' | 'Business Owner' | 'Administrator'
   userName: string
   navItems: NavItem[]
   children: React.ReactNode

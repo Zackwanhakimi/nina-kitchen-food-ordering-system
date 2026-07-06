@@ -18,9 +18,6 @@ export function PublicHeader() {
           <Link href="/#menu" className="text-muted-foreground hover:text-foreground">
             Menu
           </Link>
-          <Link href="/#how" className="text-muted-foreground hover:text-foreground">
-            How it works
-          </Link>
           <Link href="/#about" className="text-muted-foreground hover:text-foreground">
             About
           </Link>
