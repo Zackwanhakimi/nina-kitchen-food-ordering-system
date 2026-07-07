@@ -7,13 +7,37 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/page-header'
 import { menuItems, customerProfile } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
 
-const sampleCart = [
-  { item: menuItems[0], qty: 2 },
+type AddressOption = {
+  id: string
+  label: string
+  address: string
+  isDefault: boolean
+}
+
+type CartItem = {
+  item: typeof menuItems[0]
+  qty: number
+  spiceLevel?: string
+  notes?: string
+}
+
+const sampleCart: CartItem[] = [
+  { item: menuItems[0], qty: 2, spiceLevel: 'medium' },
   { item: menuItems[3], qty: 1 },
+]
+
+const sampleAddresses: AddressOption[] = [
+  {
+    id: '1',
+    label: 'Home',
+    address: '24 Jalan Melur, Taman Seri, 50450 Kuala Lumpur',
+    isDefault: true,
+  },
 ]
 
 const methods = [
@@ -24,11 +48,13 @@ const methods = [
 
 export default function CheckoutPage() {
   const [method, setMethod] = useState('card')
+  const [selectedAddressId, setSelectedAddressId] = useState('1')
   const [placed, setPlaced] = useState(false)
 
   const subtotal = sampleCart.reduce((s, c) => s + c.item.price * c.qty, 0)
   const delivery = 4
   const total = subtotal + delivery
+  const selectedAddress = sampleAddresses.find((a) => a.id === selectedAddressId)
 
   if (placed) {
     return (
@@ -69,18 +95,53 @@ export default function CheckoutPage() {
             <CardHeader>
               <CardTitle>Delivery details</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" defaultValue={customerProfile.name} />
+            <CardContent className="flex flex-col gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" defaultValue={customerProfile.name} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input id="phone" defaultValue={customerProfile.phone} />
+                </div>
               </div>
+
               <div className="flex flex-col gap-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" defaultValue={customerProfile.phone} />
-              </div>
-              <div className="flex flex-col gap-2 sm:col-span-2">
-                <Label htmlFor="address">Delivery address</Label>
-                <Input id="address" defaultValue={customerProfile.address} />
+                <Label>Delivery address</Label>
+                <div className="flex flex-col gap-2">
+                  {sampleAddresses.map((addr) => (
+                    <button
+                      key={addr.id}
+                      onClick={() => setSelectedAddressId(addr.id)}
+                      className={cn(
+                        'rounded-lg border p-3 text-left transition-colors',
+                        selectedAddressId === addr.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:bg-muted',
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {addr.label}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {addr.address}
+                          </p>
+                        </div>
+                        <span
+                          className={cn(
+                            'size-4 rounded-full border-2 shrink-0',
+                            selectedAddressId === addr.id
+                              ? 'border-primary bg-primary'
+                              : 'border-border',
+                          )}
+                        />
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -134,16 +195,27 @@ export default function CheckoutPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {sampleCart.map((c) => (
-              <div
-                key={c.item.id}
-                className="flex items-center justify-between text-sm"
-              >
-                <span className="text-foreground">
-                  {c.qty}× {c.item.name}
-                </span>
-                <span className="text-muted-foreground">
-                  RM {(c.item.price * c.qty).toFixed(2)}
-                </span>
+              <div key={c.item.id} className="flex flex-col gap-1 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-foreground">
+                    {c.qty}× {c.item.name}
+                  </span>
+                  <span className="text-muted-foreground">
+                    RM {(c.item.price * c.qty).toFixed(2)}
+                  </span>
+                </div>
+                {c.spiceLevel && (
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {c.spiceLevel}
+                    </Badge>
+                  </div>
+                )}
+                {c.notes && (
+                  <p className="text-xs text-muted-foreground italic">
+                    Note: {c.notes}
+                  </p>
+                )}
               </div>
             ))}
             <div className="border-t border-border pt-3 text-sm">

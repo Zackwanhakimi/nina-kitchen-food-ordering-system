@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   UtensilsCrossed,
   ClipboardList,
-  CreditCard,
   User,
 } from 'lucide-react'
 import { DashboardShell, type NavItem } from '@/components/dashboard-shell'
@@ -14,7 +13,6 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/customer', icon: LayoutDashboard },
   { label: 'Menu', href: '/customer/menu', icon: UtensilsCrossed },
   { label: 'My Orders', href: '/customer/orders', icon: ClipboardList },
-  { label: 'Payments', href: '/customer/payments', icon: CreditCard },
   { label: 'My Account', href: '/customer/account', icon: User },
 ]
 

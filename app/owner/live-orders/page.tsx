@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { orders as mockOrders } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
-import { Check, ChevronRight, Trash2, Edit2 } from 'lucide-react'
+import { Check, ChevronRight, Trash2, Edit2, X } from 'lucide-react'
 
 type OrderStatus =
   | 'Pending'
@@ -20,9 +20,16 @@ type OrderStatus =
   | 'Completed'
   | 'Cancelled'
 
+type DeleteConfirmation = {
+  orderId: string | null
+}
+
 export default function LiveOrdersPage() {
   const [orders, setOrders] = useState(mockOrders)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmation>({
+    orderId: null,
+  })
 
   const pendingOrders = orders.filter(
     (o) => o.status === 'Pending' || o.status === 'Confirmed' || o.status === 'Preparing'
@@ -35,10 +42,11 @@ export default function LiveOrdersPage() {
     setEditingId(null)
   }
 
-  const cancelOrder = (orderId: string) => {
+  const confirmCancelOrder = (orderId: string) => {
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: 'Cancelled' } : o))
     )
+    setDeleteConfirm({ orderId: null })
   }
 
   const getNextStatus = (current: OrderStatus): OrderStatus => {
@@ -124,7 +132,29 @@ export default function LiveOrdersPage() {
                     RM {order.total.toFixed(2)}
                   </span>
 
-                  {editingId === order.id ? (
+                  {deleteConfirm.orderId === order.id ? (
+                    <div className="flex flex-col gap-2 w-full sm:w-auto">
+                      <p className="text-xs text-muted-foreground text-right">
+                        Cancel order?
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeleteConfirm({ orderId: null })}
+                        >
+                          No
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => confirmCancelOrder(order.id)}
+                        >
+                          Yes, cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : editingId === order.id ? (
                     <div className="flex flex-col gap-2 w-full sm:w-auto">
                       <select
                         value={order.status}
@@ -138,7 +168,6 @@ export default function LiveOrdersPage() {
                         <option value="Preparing">Preparing</option>
                         <option value="Ready">Ready</option>
                         <option value="Completed">Completed</option>
-                        <option value="Cancelled">Cancelled</option>
                       </select>
                       <Button
                         size="sm"
@@ -170,11 +199,11 @@ export default function LiveOrdersPage() {
                       </Button>
                       <Button
                         size="icon-sm"
-                        variant="outline"
-                        onClick={() => cancelOrder(order.id)}
+                        variant="destructive"
+                        onClick={() => setDeleteConfirm({ orderId: order.id })}
                         title="Cancel order"
                       >
-                        <Trash2 className="size-4" />
+                        <X className="size-4" />
                       </Button>
                     </div>
                   )}
@@ -182,6 +211,40 @@ export default function LiveOrdersPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {deleteConfirm.orderId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-sm">
+            <CardContent className="pt-6">
+              <h2 className="text-lg font-semibold text-foreground mb-2">
+                Cancel order?
+              </h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                Are you sure you want to cancel this order? This action cannot be
+                undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setDeleteConfirm({ orderId: null })}
+                >
+                  Keep order
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() =>
+                    deleteConfirm.orderId && confirmCancelOrder(deleteConfirm.orderId)
+                  }
+                >
+                  Cancel order
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </>

@@ -23,7 +23,7 @@ export function PublicHeader() {
           </Link>
         </nav>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="lg" render={<Link href="/login" />}>
+          <Button variant="ghost" size="lg" render={<Link href="/login/customer" />}>
             Log in
           </Button>
           <Button size="lg" render={<Link href="/register" />}>

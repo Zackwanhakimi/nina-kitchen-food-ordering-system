@@ -42,9 +42,9 @@ export default function CustomerOrdersPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  render={<Link href={`/customer/orders/${order.id}`} />}
+                  render={<Link href="/customer/payments" />}
                 >
-                  Details
+                  View receipt
                   <ChevronRight className="size-4" />
                 </Button>
               </div>

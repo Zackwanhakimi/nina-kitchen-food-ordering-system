@@ -77,108 +77,89 @@ export default function LandingPage() {
 
         {/* Menu */}
         <section id="menu" className="mx-auto w-full max-w-6xl px-4 py-14">
-          <div className="mb-8">
-            <h2 className="font-serif text-3xl font-bold text-foreground">
-              Our Menu
-            </h2>
-            <p className="mt-1 text-muted-foreground">
-              Browse and add items to your cart. You need to register to
-              checkout.
-            </p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="font-serif text-3xl font-bold text-foreground">
+                Our Menu
+              </h2>
+              <p className="mt-1 text-muted-foreground">
+                Browse and add items to your cart. Register to checkout.
+              </p>
+            </div>
+            <Button variant="outline" render={<Link href="/customer/menu" />}>
+              View full menu
+            </Button>
           </div>
 
-          {categoryOrder.map((category) => (
-            <div key={category} className="mb-12">
-              <h3 className="mb-4 font-serif text-xl font-semibold text-foreground">
-                {category}
-              </h3>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {groupedMenu[category]?.map((item) => (
-                  <Card key={item.id} className="overflow-hidden pt-0">
-                    <div className="relative aspect-[4/3] w-full bg-muted">
-                      <Image
-                        src={item.image || '/placeholder.svg'}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <CardContent className="flex flex-col gap-3 p-5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h4 className="font-serif font-semibold text-foreground">
-                            {item.name}
-                          </h4>
-                          <p className="text-sm text-muted-foreground text-pretty">
-                            {item.description}
-                          </p>
+          <div className="space-y-8">
+            {categoryOrder.map((category) => (
+              <div key={category}>
+                <h3 className="mb-3 font-serif text-lg font-semibold text-foreground">
+                  {category}
+                </h3>
+                <div className="overflow-x-auto pb-2">
+                  <div className="flex gap-4">
+                    {groupedMenu[category]?.map((item) => (
+                      <Card
+                        key={item.id}
+                        className="overflow-hidden pt-0 shrink-0 w-72"
+                      >
+                        <div className="relative aspect-[4/3] w-full bg-muted">
+                          <Image
+                            src={item.image || '/placeholder.svg'}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold text-primary">
-                          RM {item.price.toFixed(2)}
-                        </span>
-                        <Button
-                          size="sm"
-                          onClick={() => addToCart(item.id)}
-                          className="gap-1"
-                        >
-                          <Plus className="size-4" />
-                          Add
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <CardContent className="flex flex-col gap-2 p-4">
+                          <div>
+                            <h4 className="font-serif text-sm font-semibold text-foreground line-clamp-1">
+                              {item.name}
+                            </h4>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {item.description}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold text-primary text-sm">
+                              RM {item.price.toFixed(2)}
+                            </span>
+                            <Button
+                              size="sm"
+                              onClick={() => addToCart(item.id)}
+                              className="gap-1 h-8 text-xs"
+                            >
+                              <Plus className="size-3" />
+                              Add
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
 
-        {/* About */}
+        {/* About CTA */}
         <section id="about" className="border-t border-border bg-secondary/40">
-          <div className="mx-auto w-full max-w-6xl px-4 py-14">
-            <h2 className="font-serif text-3xl font-bold text-foreground">
-              About Ayam Gepuk Nina Kitchen
+          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-5 px-4 py-16 text-center">
+            <h2 className="font-serif text-3xl font-bold text-balance">
+              Learn more about us
             </h2>
-            <div className="mt-8 space-y-4 text-muted-foreground">
-              <p>
-                Ayam Gepuk Nina Kitchen is located at Jalan Merlimau Utama,
-                Taman Merlimau Utama, 77300 Merlimau, Melaka. The restaurant
-                started as a business known as Nina Kitchen in BizBox Merlimau
-                selling various menu items including donuts, cake, and other
-                Malaysian cuisines such as Kuih Muih and Pulut Kuning Set
-                Rendang Ayam.
-              </p>
-              <p>
-                On 22 March 2022, the restaurant in BizBox Merlimau was closed
-                as the owner focused on handling the factory canteen while still
-                handling custom orders and catering. Next, the restaurant
-                rebranded as Ayam Gepuk Nina Kitchen on 15 December 2025 which
-                focused on Ayam Gepuk dishes and opened for business at the
-                current location.
-              </p>
-              <p>
-                The restaurant business primary operation is on-premise food and
-                beverage sales, while opening custom orders for cake and
-                catering. The menu consists of Nasi Ayam Gepuk and other Ayam
-                Gepuk variants such as Ayam Gepuk Indomie. They also serve a
-                series of beverages such as coffee, refresher, frappe, and other
-                non-coffee series like matcha latte. The restaurant also has
-                ready made food such as chocolate donuts and bomboloni.
-              </p>
-              <p>
-                The daily operation crew consists of 3 general workers, 1 cook
-                and the owner. The general worker handles the cashier, prepares
-                beverages, takes orders, serves food to the tables and other
-                kitchen tasks. The cook mainly prepares the food and is assisted
-                by the general workers. The owner manages the restaurant,
-                performs administrative tasks, and delegates tasks to the crew.
-              </p>
-              <p className="font-semibold">
-                Operation hours: 11:00 AM - 7:00 PM (Closed Sundays)
-              </p>
-            </div>
+            <p className="max-w-lg text-muted-foreground text-pretty">
+              Discover our story, location, and what makes Ayam Gepuk Nina
+              Kitchen special.
+            </p>
+            <Button
+              size="lg"
+              render={<Link href="/about" />}
+            >
+              Visit about page
+            </Button>
           </div>
         </section>
 
@@ -203,7 +184,7 @@ export default function LandingPage() {
                 size="lg"
                 variant="outline"
                 className="border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                render={<Link href="/login" />}
+                render={<Link href="/login/customer" />}
               >
                 Log in
               </Button>
@@ -216,10 +197,10 @@ export default function LandingPage() {
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row">
           <p>Ayam Gepuk Nina Kitchen — home-cooked with love.</p>
           <div className="flex gap-4">
-            <Link href="/login" className="hover:text-foreground">
+            <Link href="/login/customer" className="hover:text-foreground">
               Customer login
             </Link>
-            <Link href="/login?role=admin" className="hover:text-foreground">
+            <Link href="/login/admin" className="hover:text-foreground">
               Administrator login
             </Link>
           </div>
