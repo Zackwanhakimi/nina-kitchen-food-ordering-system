@@ -18,7 +18,7 @@ export function PublicHeader() {
           <Link href="/#menu" className="text-muted-foreground hover:text-foreground">
             Menu
           </Link>
-          <Link href="/#about" className="text-muted-foreground hover:text-foreground">
+          <Link href="/about" className="text-muted-foreground hover:text-foreground">
             About
           </Link>
         </nav>
