@@ -172,35 +172,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
-        {/* CTA */}
-        <section className="border-t border-border bg-primary">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-5 px-4 py-16 text-center text-primary-foreground">
-            <h2 className="font-serif text-3xl font-bold text-balance md:text-4xl">
-              Ready to order?
-            </h2>
-            <p className="max-w-lg text-primary-foreground/85 text-pretty">
-              Create an account to complete your order and track it in real time.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Button
-                size="lg"
-                variant="secondary"
-                render={<Link href="/register" />}
-              >
-                Create account
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                render={<Link href="/login/customer" />}
-              >
-                Log in
-              </Button>
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="border-t border-border bg-background">
