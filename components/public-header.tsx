@@ -18,15 +18,12 @@ export function PublicHeader() {
           <Link href="/#menu" className="text-muted-foreground hover:text-foreground">
             Menu
           </Link>
-          <Link href="/#how" className="text-muted-foreground hover:text-foreground">
-            How it works
-          </Link>
-          <Link href="/#about" className="text-muted-foreground hover:text-foreground">
+          <Link href="/about" className="text-muted-foreground hover:text-foreground">
             About
           </Link>
         </nav>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="lg" render={<Link href="/login" />}>
+          <Button variant="ghost" size="lg" render={<Link href="/login/customer" />}>
             Log in
           </Button>
           <Button size="lg" render={<Link href="/register" />}>
