@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import {
   DollarSign,
@@ -6,31 +8,36 @@ import {
   UtensilsCrossed,
   ChevronRight,
 } from 'lucide-react'
+import { useMemo } from 'react'
+import { useNotifications } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
-import { orders, menuItems } from '@/lib/mock-data'
+import { useOrders } from '@/lib/store'
+import { menuItems } from '@/lib/mock-data'
 
 export default function OwnerDashboard() {
-  const revenue = orders
-    .filter((o) => o.paymentStatus === 'Paid')
-    .reduce((s, o) => s + o.total, 0)
-  const pending = orders.filter(
-    (o) => o.status === 'Pending' || o.status === 'Confirmed',
-  ).length
-  const active = orders.filter(
-    (o) => o.status !== 'Completed' && o.status !== 'Cancelled',
-  ).length
-
+  const [orders] = useOrders()
+  const revenue = useMemo(
+    () => orders.filter((o) => o.paymentStatus === 'Paid').reduce((s, o) => s + o.total, 0),
+    [orders],
+  )
+  const unconfirmed = useMemo(() => orders.filter((o) => o.status === 'Pending').length, [orders])
+  const needsPreparing = useMemo(
+    () => orders.filter((o) => o.status === 'Confirmed').length,
+    [orders],
+  )
   const stats = [
     { label: 'Revenue', value: `RM ${revenue.toFixed(2)}`, icon: DollarSign },
     { label: 'Total orders', value: orders.length, icon: ClipboardList },
-    { label: 'Pending', value: pending, icon: Clock },
-    { label: 'Menu items', value: menuItems.length, icon: UtensilsCrossed },
+    { label: 'Unconfirmed', value: unconfirmed, icon: Clock },
+    { label: 'Needs preparing', value: needsPreparing, icon: UtensilsCrossed },
   ]
 
   const recent = orders.slice(0, 4)
+  const [notifications] = useNotifications()
+  const myNotifications = notifications.filter((n) => !n.read && (n.audience === 'both' || n.audience === 'admin'))
 
   return (
     <>
@@ -43,6 +50,19 @@ export default function OwnerDashboard() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="sm:col-span-2 lg:col-span-4">
+          <Card>
+            <CardContent className="flex items-center justify-between p-5">
+              <div>
+                <p className="text-sm text-muted-foreground">Unread notifications</p>
+                <p className="font-serif text-xl font-bold text-foreground">{myNotifications.length}</p>
+              </div>
+              <div>
+                <Button render={<Link href="/owner/notifications" />}>View</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         {stats.map((stat) => {
           const Icon = stat.icon
           return (

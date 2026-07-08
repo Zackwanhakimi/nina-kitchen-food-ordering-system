@@ -1,17 +1,37 @@
+'use client'
+
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { UtensilsCrossed, ClipboardList, CreditCard, ArrowRight } from 'lucide-react'
+import { UtensilsCrossed, ClipboardList, CreditCard, ArrowRight, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
-import { menuItems, orders, customerProfile } from '@/lib/mock-data'
+import { customerProfile, menuItems } from '@/lib/mock-data'
+import { useOrders, useNotifications } from '@/lib/store'
 
 export default function CustomerDashboard() {
-  const myOrders = orders.filter((o) => o.customer === customerProfile.name)
+  const [orders, setOrders] = useOrders()
+  const myOrders = useMemo(
+    () => orders.filter((o) => o.customer === customerProfile.name),
+    [orders],
+  )
   const activeOrder = myOrders.find(
     (o) => o.status !== 'Completed' && o.status !== 'Cancelled',
   )
+  const [isManageOpen, setIsManageOpen] = useState(false)
+
+  const requestCancellation = () => {
+    if (!activeOrder) return
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === activeOrder.id
+          ? { ...o, cancellationRequested: true }
+          : o,
+      ),
+    )
+  }
   const stats = [
     {
       label: 'Total orders',
@@ -30,6 +50,9 @@ export default function CustomerDashboard() {
     },
   ]
 
+  const [notifications] = useNotifications()
+  const myNotifications = notifications.filter((n) => !n.read && (n.audience === 'both' || n.audience === 'customer'))
+
   return (
     <>
       <PageHeader
@@ -44,6 +67,19 @@ export default function CustomerDashboard() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
+        <div className="sm:col-span-3">
+          <Card>
+            <CardContent className="flex items-center justify-between p-5">
+              <div>
+                <p className="text-sm text-muted-foreground">Unread notifications</p>
+                <p className="font-serif text-xl font-bold text-foreground">{myNotifications.length}</p>
+              </div>
+              <div>
+                <Button render={<Link href="/customer/notifications" />}>View</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
@@ -72,23 +108,86 @@ export default function CustomerDashboard() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-              {activeOrder.items
-                .map((i) => `${i.quantity}× ${i.name}`)
-                .join(', ')}
+              Pickup scheduled for {activeOrder.pickupDateTime}. {activeOrder.status === 'Pending' ? 'Awaiting admin confirmation.' : activeOrder.status === 'Confirmed' ? 'Confirmed by admin. Waiting to start preparing.' : 'Track the progress below.'}
             </p>
+            {activeOrder.cancellationRequested ? (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                Cancellation request sent. Admin will review it.
+              </p>
+            ) : null}
             <div className="flex items-center justify-between">
               <span className="font-semibold text-foreground">
                 RM {activeOrder.total.toFixed(2)}
               </span>
-              <Button
-                variant="outline"
-                render={<Link href={`/customer/orders/${activeOrder.id}`} />}
-              >
-                Track order
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsManageOpen(true)}>
+                  Manage order
+                </Button>
+                <Button
+                  variant="outline"
+                  render={<Link href={`/customer/orders/${activeOrder.id}`} />}
+                >
+                  Details
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
+      ) : null}
+
+      {isManageOpen && activeOrder ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-2xl">
+            <div className="flex items-center justify-between border-b border-border p-5">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Manage order</h2>
+                <p className="text-sm text-muted-foreground">Order {activeOrder.id}</p>
+              </div>
+              <button
+                onClick={() => setIsManageOpen(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+            <CardContent className="space-y-6 p-6">
+              <div className="space-y-3">
+                <div className="rounded-lg border border-border bg-muted/50 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-sm text-muted-foreground">Pickup date</p>
+                    <p className="font-medium text-foreground">{activeOrder.pickupDateTime}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Order timeline</p>
+                  <div className="space-y-3">
+                    {activeOrder.statusHistory.map((step) => (
+                      <div key={`${step.status}-${step.date}`} className="rounded-lg border border-border p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="font-semibold text-foreground">{step.status}</span>
+                          <span className="text-sm text-muted-foreground">{step.date}</span>
+                        </div>
+                        {step.note ? (
+                          <p className="text-sm text-muted-foreground mt-2">{step.note}</p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {['Pending', 'Confirmed'].includes(activeOrder.status) && !activeOrder.cancellationRequested ? (
+                <Button variant="destructive" onClick={requestCancellation}>
+                  Request cancellation
+                </Button>
+              ) : null}
+              {activeOrder.status === 'Preparing' || activeOrder.status === 'Ready' ? (
+                <p className="text-sm text-muted-foreground">
+                  Cancellation is no longer permitted once preparation has started.
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
 
       <div className="mt-8 flex items-center justify-between">

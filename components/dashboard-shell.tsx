@@ -6,6 +6,8 @@ import { UtensilsCrossed, LogOut } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { useNotifications } from '@/lib/store'
 
 export type NavItem = {
   label: string
@@ -27,6 +29,11 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   const pathname = usePathname()
+  const [notifications] = useNotifications()
+  const audience = role === 'Customer' ? 'customer' : 'admin'
+  const unreadCount = notifications.filter(
+    (n) => !n.read && (n.audience === 'both' || n.audience === audience),
+  ).length
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -63,7 +70,15 @@ export function DashboardShell({
                 )}
               >
                 <Icon className="size-4" />
-                {item.label}
+                <span className="flex items-center gap-2">
+                  {item.label}
+                  {item.href.includes('/notifications') && unreadCount > 0 ? (
+                    <span className="ml-2 relative inline-flex">
+                      <span className="absolute inset-0 flex items-center justify-center rounded-full bg-destructive" />
+                      <span className="relative inline-flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs w-5 h-5">{unreadCount}</span>
+                    </span>
+                  ) : null}
+                </span>
               </Link>
             )
           })}

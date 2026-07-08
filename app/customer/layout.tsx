@@ -5,6 +5,7 @@ import {
   UtensilsCrossed,
   ClipboardList,
   User,
+  Bell,
 } from 'lucide-react'
 import { DashboardShell, type NavItem } from '@/components/dashboard-shell'
 import { customerProfile } from '@/lib/mock-data'
@@ -12,6 +13,7 @@ import { customerProfile } from '@/lib/mock-data'
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/customer', icon: LayoutDashboard },
   { label: 'Menu', href: '/customer/menu', icon: UtensilsCrossed },
+  { label: 'Notifications', href: '/customer/notifications', icon: Bell },
   { label: 'My Orders', href: '/customer/orders', icon: ClipboardList },
   { label: 'My Account', href: '/customer/account', icon: User },
 ]

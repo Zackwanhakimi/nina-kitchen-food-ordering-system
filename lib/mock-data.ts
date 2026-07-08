@@ -17,21 +17,33 @@ export type OrderStatus =
   | 'Out for delivery'
   | 'Completed'
   | 'Cancelled'
+  | 'Declined'
 
 export type OrderItem = {
   name: string
   quantity: number
   price: number
+  notes?: string
 }
 
 export type Order = {
   id: string
   customer: string
   date: string
+  pickupDateTime: string
+  fulfillment: 'Pickup' | 'Delivery'
+  deliveryAddress?: string
   items: OrderItem[]
   total: number
   status: OrderStatus
   paymentStatus: 'Paid' | 'Unpaid'
+  cancellationRequested?: boolean
+  adminNote?: string
+  statusHistory: {
+    status: OrderStatus
+    date: string
+    note?: string
+  }[]
 }
 
 export type Payment = {
@@ -313,7 +325,9 @@ export const orders: Order[] = [
   {
     id: 'NK-1042',
     customer: 'Aisha Rahman',
-    date: '2026-07-05 12:15',
+    date: '2026-07-04 11:20',
+    pickupDateTime: '2026-07-06 12:30',
+    fulfillment: 'Pickup',
     items: [
       { name: 'Nasi Ayam Gepuk Set A', quantity: 2, price: 7 },
       { name: 'Mi Kari', quantity: 1, price: 7 },
@@ -321,20 +335,36 @@ export const orders: Order[] = [
     total: 21,
     status: 'Preparing',
     paymentStatus: 'Paid',
+    statusHistory: [
+      { status: 'Pending', date: '2026-07-04 11:20' },
+      { status: 'Confirmed', date: '2026-07-04 12:00' },
+      { status: 'Preparing', date: '2026-07-05 10:15' },
+    ],
   },
   {
     id: 'NK-1041',
     customer: 'Aisha Rahman',
-    date: '2026-07-03 19:40',
+    date: '2026-07-02 18:20',
+    pickupDateTime: '2026-07-03 19:00',
+    fulfillment: 'Pickup',
     items: [{ name: 'Ramen Chor', quantity: 1, price: 14 }],
     total: 14,
     status: 'Completed',
     paymentStatus: 'Paid',
+    statusHistory: [
+      { status: 'Pending', date: '2026-07-02 18:20' },
+      { status: 'Confirmed', date: '2026-07-02 18:50' },
+      { status: 'Preparing', date: '2026-07-03 10:30' },
+      { status: 'Ready', date: '2026-07-03 18:15' },
+      { status: 'Completed', date: '2026-07-03 19:25' },
+    ],
   },
   {
     id: 'NK-1040',
     customer: 'Daniel Tan',
-    date: '2026-07-03 18:05',
+    date: '2026-07-02 16:35',
+    pickupDateTime: '2026-07-03 18:00',
+    fulfillment: 'Pickup',
     items: [
       { name: 'Keli Gepuk Set B', quantity: 1, price: 9 },
       { name: 'Indomie Ayam Gepuk', quantity: 1, price: 10 },
@@ -342,20 +372,32 @@ export const orders: Order[] = [
     total: 19,
     status: 'Ready',
     paymentStatus: 'Paid',
+    statusHistory: [
+      { status: 'Pending', date: '2026-07-02 16:35' },
+      { status: 'Confirmed', date: '2026-07-02 17:10' },
+      { status: 'Preparing', date: '2026-07-03 10:00' },
+      { status: 'Ready', date: '2026-07-03 17:50' },
+    ],
   },
   {
     id: 'NK-1039',
     customer: 'Priya Kumar',
-    date: '2026-07-02 13:20',
+    date: '2026-07-01 13:20',
+    pickupDateTime: '2026-07-02 13:00',
+    fulfillment: 'Pickup',
     items: [{ name: 'Nasi Ayam Crispy', quantity: 3, price: 7 }],
     total: 21,
     status: 'Pending',
-    paymentStatus: 'Unpaid',
+    paymentStatus: 'Paid',
+    cancellationRequested: false,
+    statusHistory: [{ status: 'Pending', date: '2026-07-01 13:20' }],
   },
   {
     id: 'NK-1038',
     customer: 'Aisha Rahman',
-    date: '2026-06-28 20:10',
+    date: '2026-06-27 19:10',
+    pickupDateTime: '2026-06-28 20:00',
+    fulfillment: 'Pickup',
     items: [
       { name: 'Nasi Ayam Gepuk Set A', quantity: 1, price: 7 },
       { name: 'ABC Coklat', quantity: 2, price: 7 },
@@ -363,6 +405,36 @@ export const orders: Order[] = [
     total: 21,
     status: 'Completed',
     paymentStatus: 'Paid',
+    statusHistory: [
+      { status: 'Pending', date: '2026-06-27 19:10' },
+      { status: 'Confirmed', date: '2026-06-27 19:40' },
+      { status: 'Preparing', date: '2026-06-28 10:00' },
+      { status: 'Ready', date: '2026-06-28 19:00' },
+      { status: 'Completed', date: '2026-06-28 20:20' },
+    ],
+  },
+  // Delivery example
+  {
+    id: 'NK-1025',
+    customer: 'Ravi Singh',
+    date: '2026-07-05 14:00',
+    pickupDateTime: '2026-07-05 15:30',
+    fulfillment: 'Delivery',
+    deliveryAddress: '12 Jalan Bunga, Taman Maju, 56000 Kuala Lumpur',
+    items: [
+      { name: 'Tilapia Gepuk Set A', quantity: 1, price: 10 },
+      { name: 'Chocolate Boba', quantity: 2, price: 6 },
+    ],
+    total: 22,
+    status: 'Out for delivery',
+    paymentStatus: 'Paid',
+    statusHistory: [
+      { status: 'Pending', date: '2026-07-05 14:00' },
+      { status: 'Confirmed', date: '2026-07-05 14:20' },
+      { status: 'Preparing', date: '2026-07-05 14:45' },
+      { status: 'Ready', date: '2026-07-05 15:10' },
+      { status: 'Out for delivery', date: '2026-07-05 15:25', note: 'Rider assigned' },
+    ],
   },
 ]
 
@@ -393,11 +465,63 @@ export const payments: Payment[] = [
   },
 ]
 
+export type Notification = {
+  id: string
+  title: string
+  message: string
+  date: string
+  read: boolean
+  orderId?: string
+  audience: 'customer' | 'admin' | 'both'
+}
+
+export const notifications: Notification[] = [
+  {
+    id: 'N-9001',
+    title: 'Order confirmed',
+    message: 'Your preorder NK-1042 has been confirmed by the admin.',
+    date: '2026-07-04 12:00',
+    read: false,
+    orderId: 'NK-1042',
+    audience: 'customer',
+  },
+  {
+    id: 'N-9002',
+    title: 'New preorder received',
+    message: 'A new preorder NK-1039 is awaiting approval.',
+    date: '2026-07-01 13:25',
+    read: false,
+    orderId: 'NK-1039',
+    audience: 'admin',
+  },
+  {
+    id: 'N-9003',
+    title: 'Out for delivery',
+    message: 'Order NK-1025 is out for delivery. Rider assigned.',
+    date: '2026-07-05 15:25',
+    read: false,
+    orderId: 'NK-1025',
+    audience: 'customer',
+  },
+  {
+    id: 'N-9004',
+    title: 'System notice',
+    message: 'Menu updates are live.',
+    date: '2026-07-06 09:00',
+    read: true,
+    audience: 'both',
+  },
+]
+
 export const customerProfile = {
   name: 'Aisha Rahman',
   email: 'aisha.rahman@example.com',
   phone: '+60 12-345 6789',
   address: '24 Jalan Melur, Taman Seri, 50450 Kuala Lumpur',
+  savedAddresses: [
+    '24 Jalan Melur, Taman Seri, 50450 Kuala Lumpur',
+    '12 Jalan Bunga, Taman Maju, 56000 Kuala Lumpur',
+  ],
   joined: 'March 2026',
   memberTier: 'Gold',
 }
@@ -407,7 +531,6 @@ export const orderStatusSteps: OrderStatus[] = [
   'Confirmed',
   'Preparing',
   'Ready',
-  'Out for delivery',
   'Completed',
 ]
 
@@ -419,11 +542,14 @@ export function statusColor(status: OrderStatus): string {
     case 'Preparing':
       return 'bg-accent/20 text-accent-foreground'
     case 'Ready':
-    case 'Out for delivery':
       return 'bg-primary/15 text-primary'
+    case 'Out for delivery':
+      return 'bg-amber-100 text-amber-700'
     case 'Completed':
       return 'bg-chart-3/20 text-chart-3'
     case 'Cancelled':
+      return 'bg-destructive/15 text-destructive'
+    case 'Declined':
       return 'bg-destructive/15 text-destructive'
     default:
       return 'bg-muted text-muted-foreground'

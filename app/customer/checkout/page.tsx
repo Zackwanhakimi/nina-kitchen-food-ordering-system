@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { CheckCircle2, CreditCard, Wallet, Banknote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,36 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/page-header'
-import { menuItems, customerProfile } from '@/lib/mock-data'
+import { customerProfile } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
-
-type AddressOption = {
-  id: string
-  label: string
-  address: string
-  isDefault: boolean
-}
-
-type CartItem = {
-  item: typeof menuItems[0]
-  qty: number
-  spiceLevel?: string
-  notes?: string
-}
-
-const sampleCart: CartItem[] = [
-  { item: menuItems[0], qty: 2, spiceLevel: 'medium' },
-  { item: menuItems[3], qty: 1 },
-]
-
-const sampleAddresses: AddressOption[] = [
-  {
-    id: '1',
-    label: 'Home',
-    address: '24 Jalan Melur, Taman Seri, 50450 Kuala Lumpur',
-    isDefault: true,
-  },
-]
+import { useCart, useOrders } from '@/lib/store'
 
 const methods = [
   { id: 'card', label: 'Credit / Debit Card', icon: CreditCard },
@@ -48,13 +21,63 @@ const methods = [
 
 export default function CheckoutPage() {
   const [method, setMethod] = useState('card')
-  const [selectedAddressId, setSelectedAddressId] = useState('1')
+  const [pickupDate, setPickupDate] = useState('')
+  const [pickupTime, setPickupTime] = useState('12:00')
+  const [fulfillment, setFulfillment] = useState<'Pickup' | 'Delivery'>('Pickup')
+  const [deliveryAddress, setDeliveryAddress] = useState<string>(customerProfile.address)
   const [placed, setPlaced] = useState(false)
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null)
 
-  const subtotal = sampleCart.reduce((s, c) => s + c.item.price * c.qty, 0)
-  const delivery = 4
-  const total = subtotal + delivery
-  const selectedAddress = sampleAddresses.find((a) => a.id === selectedAddressId)
+  const { cartItems, totalPrice, clearCart } = useCart()
+  const [, setOrders] = useOrders()
+
+  const subtotal = totalPrice
+  const total = subtotal
+
+  const pickupDateTime = useMemo(() => {
+    if (!pickupDate || !pickupTime) return ''
+    return `${pickupDate} ${pickupTime}`
+  }, [pickupDate, pickupTime])
+
+  const canPlaceOrder = cartItems.length > 0 && pickupDateTime !== ''
+    && (fulfillment === 'Pickup' || (fulfillment === 'Delivery' && deliveryAddress.trim() !== ''))
+
+  const placeOrder = () => {
+    if (!canPlaceOrder) return
+
+    const now = new Date()
+    const orderDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+      now.getDate(),
+    ).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    const id = `NK-${Math.floor(1000 + Math.random() * 9000)}`
+
+    const orderItems = cartItems.map((entry) => ({
+      name: entry.item?.name ?? 'Item',
+      quantity: entry.quantity,
+      price: entry.item?.price ?? 0,
+      notes: entry.notes,
+    }))
+
+    const newOrder = {
+      id,
+      customer: customerProfile.name,
+      date: orderDate,
+      pickupDateTime,
+      fulfillment,
+      deliveryAddress: fulfillment === 'Delivery' ? deliveryAddress : undefined,
+      items: orderItems,
+      total: total,
+      status: 'Pending' as const,
+      paymentStatus: 'Paid' as const,
+      cancellationRequested: false,
+      statusHistory: [{ status: 'Pending' as const, date: orderDate }],
+    }
+
+    setOrders((prev) => [newOrder, ...prev])
+    clearCart()
+    setPlaced(true)
+    setPlacedOrderId(id)
+  }
 
   if (placed) {
     return (
@@ -63,19 +86,17 @@ export default function CheckoutPage() {
           <CheckCircle2 className="size-8" />
         </span>
         <h1 className="mt-6 font-serif text-2xl font-bold text-foreground">
-          Order placed &amp; paid!
+          Preorder submitted
         </h1>
         <p className="mt-2 text-sm text-muted-foreground text-pretty">
-          Your order <strong>NK-1043</strong> has been received and paid via{' '}
-          {methods.find((m) => m.id === method)?.label}. You can track its
-          status now.
+          Your preorder <strong>{placedOrderId}</strong> is pending admin confirmation. Pickup is scheduled for <strong>{pickupDateTime}</strong>.
         </p>
         <div className="mt-6 flex gap-3">
-          <Button render={<Link href="/customer/orders/NK-1043" />}>
-            Track order
-          </Button>
-          <Button variant="outline" render={<Link href="/customer" />}>
+          <Button render={<Link href="/customer" />}>
             Back to dashboard
+          </Button>
+          <Button variant="outline" render={<Link href="/customer/orders" />}>
+            View order history
           </Button>
         </div>
       </div>
@@ -86,61 +107,77 @@ export default function CheckoutPage() {
     <>
       <PageHeader
         title="Checkout"
-        description="Review your order and complete payment."
+        description="Review your preorder and select a pickup time. Preorders must be placed at least 1 day before pickup."
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Delivery details</CardTitle>
+              <CardTitle>Pickup details</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="fulfillment"
+                    checked={fulfillment === 'Pickup'}
+                    onChange={() => setFulfillment('Pickup')}
+                  />
+                  Pickup
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="fulfillment"
+                    checked={fulfillment === 'Delivery'}
+                    onChange={() => setFulfillment('Delivery')}
+                  />
+                  Delivery
+                </label>
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="name">Name</Label>
-                  <Input id="name" defaultValue={customerProfile.name} />
+                  <Input id="name" defaultValue={customerProfile.name} readOnly />
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" defaultValue={customerProfile.phone} />
+                  <Input id="phone" defaultValue={customerProfile.phone} readOnly />
                 </div>
               </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Delivery address</Label>
+              {fulfillment === 'Delivery' ? (
                 <div className="flex flex-col gap-2">
-                  {sampleAddresses.map((addr) => (
-                    <button
-                      key={addr.id}
-                      onClick={() => setSelectedAddressId(addr.id)}
-                      className={cn(
-                        'rounded-lg border p-3 text-left transition-colors',
-                        selectedAddressId === addr.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:bg-muted',
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {addr.label}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {addr.address}
-                          </p>
-                        </div>
-                        <span
-                          className={cn(
-                            'size-4 rounded-full border-2 shrink-0',
-                            selectedAddressId === addr.id
-                              ? 'border-primary bg-primary'
-                              : 'border-border',
-                          )}
-                        />
-                      </div>
-                    </button>
-                  ))}
+                  <Label htmlFor="deliveryAddress">Delivery address</Label>
+                  <Input
+                    id="deliveryAddress"
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    placeholder="Enter delivery address"
+                  />
+                </div>
+              ) : null}
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="pickupDate">Pickup date</Label>
+                  <Input
+                    id="pickupDate"
+                    type="date"
+                    value={pickupDate}
+                    onChange={(e) => setPickupDate(e.target.value)}
+                    min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="pickupTime">Pickup time</Label>
+                  <Input
+                    id="pickupTime"
+                    type="time"
+                    value={pickupTime}
+                    onChange={(e) => setPickupTime(e.target.value)}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -194,38 +231,41 @@ export default function CheckoutPage() {
             <CardTitle>Order summary</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {sampleCart.map((c) => (
-              <div key={c.item.id} className="flex flex-col gap-1 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-foreground">
-                    {c.qty}× {c.item.name}
-                  </span>
-                  <span className="text-muted-foreground">
-                    RM {(c.item.price * c.qty).toFixed(2)}
-                  </span>
-                </div>
-                {c.spiceLevel && (
-                  <div className="flex gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {c.spiceLevel}
-                    </Badge>
+            {cartItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Your cart is empty. Add items from the menu before checkout.
+              </p>
+            ) : (
+              cartItems.map((entry) => (
+                <div key={`${entry.itemId}-${entry.spiceLevel ?? 'default'}`} className="flex flex-col gap-1 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-foreground">
+                      {entry.quantity}× {entry.item?.name}
+                    </span>
+                    <span className="text-muted-foreground">
+                      RM {((entry.item?.price ?? 0) * entry.quantity).toFixed(2)}
+                    </span>
                   </div>
-                )}
-                {c.notes && (
-                  <p className="text-xs text-muted-foreground italic">
-                    Note: {c.notes}
-                  </p>
-                )}
-              </div>
-            ))}
+                  {entry.spiceLevel ? (
+                    <div className="flex gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {entry.spiceLevel}
+                      </Badge>
+                    </div>
+                  ) : null}
+                  {entry.notes ? (
+                    <p className="text-xs text-muted-foreground italic">
+                      Note: {entry.notes}
+                    </p>
+                  ) : null}
+                </div>
+              ))
+            )}
+
             <div className="border-t border-border pt-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>RM {subtotal.toFixed(2)}</span>
-              </div>
-              <div className="mt-1 flex justify-between">
-                <span className="text-muted-foreground">Delivery</span>
-                <span>RM {delivery.toFixed(2)}</span>
               </div>
             </div>
             <div className="flex justify-between border-t border-border pt-3 font-serif text-lg font-bold text-foreground">
@@ -235,9 +275,10 @@ export default function CheckoutPage() {
             <Button
               size="lg"
               className="mt-2 w-full"
-              onClick={() => setPlaced(true)}
+              onClick={placeOrder}
+              disabled={!canPlaceOrder}
             >
-              Place order &amp; pay
+              Place preorder
             </Button>
           </CardContent>
         </Card>

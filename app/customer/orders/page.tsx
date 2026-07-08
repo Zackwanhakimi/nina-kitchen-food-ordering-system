@@ -45,7 +45,7 @@ export default function CustomerOrdersPage() {
                   <StatusBadge status={order.status} />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {order.date} ·{' '}
+                  {order.date} · Pickup {order.pickupDateTime} ·{' '}
                   {order.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}
                 </p>
               </div>
@@ -107,10 +107,18 @@ export default function CustomerOrdersPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase">
-                      Date
+                      Preorder date
                     </p>
                     <p className="font-semibold text-foreground">
                       {selectedOrder.date}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase">
+                      Pickup date
+                    </p>
+                    <p className="font-semibold text-foreground">
+                      {selectedOrder.pickupDateTime}
                     </p>
                   </div>
                 </div>

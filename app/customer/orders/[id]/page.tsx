@@ -1,38 +1,42 @@
+'use client'
+
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { useMemo } from 'react'
+import { useParams } from 'next/navigation'
 import { ArrowLeft, Check, CircleDot } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
-import { orders, orderStatusSteps } from '@/lib/mock-data'
+import { orderStatusSteps } from '@/lib/mock-data'
+import { useOrders } from '@/lib/store'
 import { cn } from '@/lib/utils'
 
-export default async function OrderTrackingPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
-  const order =
-    orders.find((o) => o.id === id) ??
-    // fall back to a synthetic just-placed order for the checkout demo
-    (id === 'NK-1043'
-      ? {
-          id: 'NK-1043',
-          customer: 'Aisha Rahman',
-          date: '2026-07-05 12:40',
-          items: [
-            { name: 'Nasi Lemak', quantity: 2, price: 12.9 },
-            { name: 'Chicken Satay', quantity: 1, price: 10.5 },
-          ],
-          total: 40.3,
-          status: 'Confirmed' as const,
-          paymentStatus: 'Paid' as const,
-        }
-      : undefined)
+export default function OrderTrackingPage() {
+  const params = useParams()
+  const id = params?.id as string | undefined
+  const [orders] = useOrders()
 
-  if (!order) notFound()
+  const order = useMemo(
+    () => orders.find((o) => o.id === id),
+    [orders, id],
+  )
+
+  if (!order) {
+    return (
+      <div className="mx-auto flex max-w-2xl flex-col items-center py-16 text-center">
+        <h1 className="font-serif text-2xl font-bold text-foreground">Order not found</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          We could not find that order. Please return to your orders list.
+        </p>
+        <div className="mt-6">
+          <Button variant="outline" render={<Link href="/customer/orders" />}>
+            Back to orders
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   const currentIndex = orderStatusSteps.indexOf(order.status)
 
@@ -61,20 +65,18 @@ export default async function OrderTrackingPage({
           </CardHeader>
           <CardContent>
             <ol className="flex flex-col gap-6">
-              {orderStatusSteps.map((step, index) => {
+              {order.statusHistory.map((step, index) => {
                 const done = index < currentIndex
                 const active = index === currentIndex
                 return (
-                  <li key={step} className="flex items-start gap-4">
+                  <li key={`${step.status}-${step.date}`} className="flex items-start gap-4">
                     <span
                       className={cn(
                         'flex size-8 shrink-0 items-center justify-center rounded-full border',
                         done && 'border-chart-3 bg-chart-3/20 text-chart-3',
                         active &&
                           'border-primary bg-primary text-primary-foreground',
-                        !done &&
-                          !active &&
-                          'border-border bg-muted text-muted-foreground',
+                        !done && !active && 'border-border bg-muted text-muted-foreground',
                       )}
                     >
                       {done ? (
@@ -92,12 +94,11 @@ export default async function OrderTrackingPage({
                           active ? 'text-foreground' : 'text-muted-foreground',
                         )}
                       >
-                        {step}
+                        {step.status}
                       </p>
-                      {active ? (
-                        <p className="text-sm text-muted-foreground">
-                          Your order is currently at this stage.
-                        </p>
+                      <p className="text-sm text-muted-foreground">{step.date}</p>
+                      {step.note ? (
+                        <p className="text-sm text-muted-foreground mt-1">{step.note}</p>
                       ) : null}
                     </div>
                   </li>
@@ -110,14 +111,11 @@ export default async function OrderTrackingPage({
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Items</CardTitle>
+              <CardTitle>Order details</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               {order.items.map((item) => (
-                <div
-                  key={item.name}
-                  className="flex justify-between text-sm"
-                >
+                <div key={`${item.name}-${item.quantity}`} className="flex justify-between text-sm">
                   <span className="text-foreground">
                     {item.quantity}× {item.name}
                   </span>
@@ -130,35 +128,27 @@ export default async function OrderTrackingPage({
                 <span>Total</span>
                 <span>RM {order.total.toFixed(2)}</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Payment</span>
-                <span
-                  className={cn(
-                    'font-medium',
-                    order.paymentStatus === 'Paid'
-                      ? 'text-chart-3'
-                      : 'text-destructive',
-                  )}
-                >
-                  {order.paymentStatus}
-                </span>
+              <div className="space-y-2 border-t border-border pt-4 text-sm text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>Pickup</span>
+                  <span>{order.pickupDateTime}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Preorder placed</span>
+                  <span>{order.date}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Payment</span>
+                  <span>{order.paymentStatus}</span>
+                </div>
               </div>
+              {order.adminNote ? (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  Admin note: {order.adminNote}
+                </div>
+              ) : null}
             </CardContent>
           </Card>
-
-          {order.paymentStatus === 'Unpaid' ? (
-            <Button size="lg" render={<Link href="/customer/checkout" />}>
-              Make payment
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="lg"
-              render={<Link href="/customer/payments" />}
-            >
-              View payment
-            </Button>
-          )}
         </div>
       </div>
     </>

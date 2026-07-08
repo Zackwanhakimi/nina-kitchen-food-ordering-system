@@ -48,7 +48,7 @@ export default function LandingPage() {
             </h1>
             <p className="max-w-md text-lg text-muted-foreground text-pretty">
               Delicious home-cooked meals prepared with love. Browse our menu,
-              add items to cart, and register to place your order.
+              add items to cart, and register to place your pre-order.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button size="lg" render={<Link href="/#menu" />}>
@@ -151,7 +151,7 @@ export default function LandingPage() {
               Ready to order?
             </h2>
             <p className="max-w-lg text-primary-foreground/85 text-pretty">
-              Create an account to complete your order and track it in real time.
+              Create an account to complete your pre-order and track it in real time.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Button

@@ -1,65 +1,95 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
-import { orders as mockOrders } from '@/lib/mock-data'
+import { useOrders } from '@/lib/store'
 import { cn } from '@/lib/utils'
-import { Check, ChevronRight, Trash2, Edit2, X } from 'lucide-react'
-
-type OrderStatus =
-  | 'Pending'
-  | 'Confirmed'
-  | 'Preparing'
-  | 'Ready'
-  | 'Out for delivery'
-  | 'Completed'
-  | 'Cancelled'
+import { Check } from 'lucide-react'
+import { useNotifications } from '@/lib/store'
 
 type DeleteConfirmation = {
   orderId: string | null
 }
 
 export default function LiveOrdersPage() {
-  const [orders, setOrders] = useState(mockOrders)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [orders, setOrders] = useOrders()
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmation>({
     orderId: null,
   })
 
-  const pendingOrders = orders.filter(
-    (o) => o.status === 'Pending' || o.status === 'Confirmed' || o.status === 'Preparing'
+  const pendingOrders = useMemo(
+    () => orders.filter((o) => o.status === 'Confirmed' || o.status === 'Preparing' || o.status === 'Ready'),
+    [orders],
   )
 
-  const updateOrderStatus = (orderId: string, newStatus: OrderStatus) => {
+  const updateOrderStatus = (orderId: string, newStatus: 'Confirmed' | 'Preparing' | 'Ready' | 'Completed') => {
+    const now = new Date()
+    const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+      now.getDate(),
+    ).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              status: newStatus,
+              statusHistory: [
+                ...o.statusHistory,
+                { status: newStatus, date: timestamp },
+              ],
+            }
+          : o,
+      ),
     )
-    setEditingId(null)
+  }
+
+  const [notifications, setNotifications] = useNotifications()
+
+  const sendNotification = (orderId: string, audience: 'customer' | 'admin' | 'both' = 'customer') => {
+    const now = new Date()
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+      now.getDate(),
+    ).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    const id = `N-${Math.floor(1000 + Math.random() * 9000)}`
+    const notif = {
+      id,
+      title: `Update for ${orderId}`,
+      message: `Admin sent an update regarding ${orderId}.`,
+      date,
+      read: false,
+      orderId,
+      audience,
+    }
+    setNotifications((prev) => [notif, ...prev])
   }
 
   const confirmCancelOrder = (orderId: string) => {
+    const now = new Date()
+    const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+      now.getDate(),
+    ).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: 'Cancelled' } : o))
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              status: 'Cancelled',
+              statusHistory: [
+                ...o.statusHistory,
+                { status: 'Cancelled', date: timestamp },
+              ],
+            }
+          : o,
+      ),
     )
     setDeleteConfirm({ orderId: null })
-  }
-
-  const getNextStatus = (current: OrderStatus): OrderStatus => {
-    const statusFlow: Record<OrderStatus, OrderStatus> = {
-      Pending: 'Confirmed',
-      Confirmed: 'Preparing',
-      Preparing: 'Ready',
-      Ready: 'Completed',
-      'Out for delivery': 'Completed',
-      Completed: 'Completed',
-      Cancelled: 'Cancelled',
-    }
-    return statusFlow[current]
   }
 
   return (
@@ -72,9 +102,9 @@ export default function LiveOrdersPage() {
       <div className="grid gap-4 md:grid-cols-2 mb-6">
         <Card>
           <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Pending & Preparing</p>
+            <p className="text-sm text-muted-foreground">Confirmed & Preparing</p>
             <p className="font-serif text-2xl font-bold text-foreground">
-              {orders.filter((o) => o.status === 'Pending' || o.status === 'Preparing').length}
+              {orders.filter((o) => o.status === 'Confirmed' || o.status === 'Preparing').length}
             </p>
           </CardContent>
         </Card>
@@ -154,57 +184,73 @@ export default function LiveOrdersPage() {
                         </Button>
                       </div>
                     </div>
-                  ) : editingId === order.id ? (
-                    <div className="flex flex-col gap-2 w-full sm:w-auto">
-                      <select
-                        value={order.status}
-                        onChange={(e) =>
-                          updateOrderStatus(order.id, e.target.value as OrderStatus)
-                        }
-                        className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Preparing">Preparing</option>
-                        <option value="Ready">Ready</option>
-                        <option value="Completed">Completed</option>
-                      </select>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditingId(null)}
-                      >
-                        Done
-                      </Button>
-                    </div>
                   ) : (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          updateOrderStatus(order.id, getNextStatus(order.status))
-                        }
-                        className="gap-1"
-                      >
-                        <Check className="size-4" />
-                        Mark ready
-                      </Button>
-                      <Button
-                        size="icon-sm"
-                        variant="outline"
-                        onClick={() => setEditingId(order.id)}
-                        title="Edit status"
-                      >
-                        <Edit2 className="size-4" />
-                      </Button>
-                      <Button
-                        size="icon-sm"
-                        variant="destructive"
-                        onClick={() => setDeleteConfirm({ orderId: order.id })}
-                        title="Cancel order"
-                      >
-                        <X className="size-4" />
-                      </Button>
+                    <div className="flex flex-col gap-2 w-full sm:w-auto">
+                      {order.status === 'Confirmed' ? (
+                        <Button
+                          size="sm"
+                          onClick={() => updateOrderStatus(order.id, 'Preparing')}
+                          className="gap-1"
+                        >
+                          <Check className="size-4" />
+                          Start preparing
+                        </Button>
+                      ) : order.status === 'Preparing' ? (
+                        <Button
+                          size="sm"
+                          onClick={() => updateOrderStatus(order.id, 'Ready')}
+                          className="gap-1"
+                        >
+                          <Check className="size-4" />
+                          Ready for pickup
+                        </Button>
+                      ) : order.status === 'Ready' ? (
+                        order.fulfillment === 'Delivery' ? (
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => updateOrderStatus(order.id, 'Out for delivery')}
+                              className="gap-1"
+                            >
+                              <Check className="size-4" />
+                              Out for delivery
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => updateOrderStatus(order.id, 'Completed')}
+                              className="gap-1"
+                            >
+                              <Check className="size-4" />
+                              Mark as complete
+                            </Button>
+                          </div>
+                        ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => updateOrderStatus(order.id, 'Completed')}
+                          className="gap-1"
+                        >
+                          <Check className="size-4" />
+                          Mark as complete
+                        </Button>
+                        )
+                      ) : null}
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => sendNotification(order.id, 'customer')}
+                        >
+                          Send notification
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setDeleteConfirm({ orderId: order.id })}
+                        >
+                          Cancel order
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>

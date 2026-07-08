@@ -12,23 +12,20 @@ import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/page-header'
 import { menuItems, type MenuItem } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
+import { useCart } from '@/lib/store'
 
 const categories = ['All', 'Makanan', 'Ais Batu Campur', 'Minuman'] as const
 
-type CartItem = {
-  itemId: string
-  quantity: number
-  spiceLevel?: string
-  notes?: string
-}
+const defaultSpiceLevels = ['mild', 'medium', 'hot'] as const
 
 export default function CustomerMenuPage() {
   const [category, setCategory] =
     useState<(typeof categories)[number]>('All')
-  const [cart, setCart] = useState<CartItem[]>([])
   const [selectedItemForOptions, setSelectedItemForOptions] = useState<string | null>(null)
   const [spiceLevel, setSpiceLevel] = useState<string>('medium')
   const [notes, setNotes] = useState<string>('')
+  const [selectedQuantity, setSelectedQuantity] = useState(1)
+  const { cart, cartItems, totalItems, totalPrice, addToCart, updateQuantity, removeFromCart } = useCart()
 
   const filtered = useMemo(
     () =>
@@ -46,43 +43,20 @@ export default function CustomerMenuPage() {
     if (item.spiceLevels) {
       setSelectedItemForOptions(item.id)
     } else {
-      addToCart(item.id, item.spiceLevels ? spiceLevel : undefined, notes)
+      addToCart(item.id, 1, undefined, '')
       setNotes('')
     }
   }
 
-  const addToCart = (itemId: string, spiceLevel?: string, itemNotes?: string) => {
-    setCart((c) => [
-      ...c,
-      {
-        itemId,
-        quantity: 1,
-        spiceLevel,
-        notes: itemNotes,
-      },
-    ])
+  const finishAddToCart = (itemId: string, itemNotes?: string) => {
+    addToCart(itemId, selectedQuantity, spiceLevel, itemNotes)
     setSelectedItemForOptions(null)
     setSpiceLevel('medium')
     setNotes('')
+    setSelectedQuantity(1)
   }
 
-  const remove = (index: number) => {
-    setCart((c) => c.filter((_, i) => i !== index))
-  }
-
-  const updateQuantity = (index: number, delta: number) => {
-    setCart((c) => {
-      const newCart = [...c]
-      newCart[index].quantity = Math.max(0, newCart[index].quantity + delta)
-      return newCart.filter((item) => item.quantity > 0)
-    })
-  }
-
-  const totalItems = cart.reduce((s, item) => s + item.quantity, 0)
-  const totalPrice = cart.reduce((s, cartItem) => {
-    const item = menuItems.find((m) => m.id === cartItem.itemId)
-    return s + (item ? item.price * cartItem.quantity : 0)
-  }, 0)
+  
 
   if (selectedItem) {
     return (
@@ -98,7 +72,7 @@ export default function CustomerMenuPage() {
               <div className="flex flex-col gap-3">
                 <Label className="text-base font-semibold">Spice Level</Label>
                 <div className="grid grid-cols-3 gap-3">
-                  {['mild', 'medium', 'hot'].map((level) => (
+                  {defaultSpiceLevels.map((level) => (
                     <button
                       key={level}
                       onClick={() => setSpiceLevel(level)}
@@ -116,17 +90,41 @@ export default function CustomerMenuPage() {
               </div>
             )}
 
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="notes" className="text-base font-semibold">
-                Special Notes
-              </Label>
-              <textarea
-                id="notes"
-                placeholder="e.g., no nuts, no tempeh, extra sauce"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="min-h-24 rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder-muted-foreground"
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-3">
+                <Label className="text-base font-semibold">Quantity</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedQuantity((qty) => Math.max(1, qty - 1))}
+                  >
+                    <Minus className="size-4" />
+                  </Button>
+                  <span className="min-w-[2rem] text-center text-base font-semibold">
+                    {selectedQuantity}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedQuantity((qty) => qty + 1)}
+                  >
+                    <Plus className="size-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="notes" className="text-base font-semibold">
+                  Special Notes
+                </Label>
+                <textarea
+                  id="notes"
+                  placeholder="e.g., no nuts, extra sauce"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="min-h-24 rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder-muted-foreground"
+                />
+              </div>
             </div>
 
             <div className="flex gap-3">
@@ -137,15 +135,14 @@ export default function CustomerMenuPage() {
                   setSelectedItemForOptions(null)
                   setSpiceLevel('medium')
                   setNotes('')
+                  setSelectedQuantity(1)
                 }}
               >
                 Cancel
               </Button>
               <Button
                 className="flex-1"
-                onClick={() =>
-                  addToCart(selectedItem.id, spiceLevel, notes)
-                }
+                onClick={() => finishAddToCart(selectedItem.id, notes)}
               >
                 <Plus className="size-4" />
                 Add to cart
