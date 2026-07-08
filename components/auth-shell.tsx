@@ -15,16 +15,16 @@ export function AuthShell({
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden lg:block">
         <Image
-          src="/images/hero-dish.png"
+          src="/indomie-telur.jpg"
           alt="Home-cooked meal from Nina Kitchen"
           fill
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-primary/50" />
+        <div className="absolute inset-0 bg-primary/20" />
         <div className="absolute inset-0 flex flex-col justify-between p-10 text-primary-foreground">
           <Link href="/" className="flex items-center gap-2">
             <span className="flex size-9 items-center justify-center rounded-full bg-primary-foreground/20">
-              <UtensilsCrossed className="size-5" />
+              <img src="/logo-kedai.jpg" alt="Nina Kitchen" />
             </span>
             <span className="font-serif text-xl font-bold">Nina Kitchen</span>
           </Link>
