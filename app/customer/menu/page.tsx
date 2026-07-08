@@ -182,7 +182,7 @@ export default function CustomerMenuPage() {
         {filtered.map((item) => {
           return (
             <Card key={item.id} className="flex flex-col overflow-hidden pt-0">
-              <div className="relative aspect-[4/3] w-full">
+              <div className="relative aspect-[2/3] w-full">
                 <Image
                   src={item.image || '/placeholder.svg'}
                   alt={item.name}

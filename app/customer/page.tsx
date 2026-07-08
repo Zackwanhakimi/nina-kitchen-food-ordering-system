@@ -204,7 +204,7 @@ export default function CustomerDashboard() {
       <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {menuItems.slice(0, 3).map((item) => (
           <Card key={item.id} className="overflow-hidden pt-0">
-            <div className="relative aspect-[4/3] w-full">
+            <div className="relative aspect-[2/3] w-full">
               <Image
                 src={item.image || '/placeholder.svg'}
                 alt={item.name}

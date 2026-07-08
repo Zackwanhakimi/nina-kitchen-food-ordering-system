@@ -20,7 +20,7 @@ export function AuthShell({
           fill
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-primary/20" />
+        <div className="absolute inset-0 bg-primary/15" />
         <div className="absolute inset-0 flex flex-col justify-between p-10 text-primary-foreground">
           <Link href="/" className="flex items-center gap-2">
             <span className="flex size-9 items-center justify-center rounded-full bg-primary-foreground/20">
