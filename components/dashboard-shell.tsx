@@ -33,7 +33,7 @@ export function DashboardShell({
       <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
           <span className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <UtensilsCrossed className="size-4" />
+            <img src="/logo-kedai.jpg" alt="Nina Kitchen" />
           </span>
           <span className="font-serif text-lg font-bold">Nina Kitchen</span>
         </div>

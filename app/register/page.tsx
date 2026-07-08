@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthShell } from '@/components/auth-shell'
+import { ArrowLeft } from 'lucide-react'
 
 export default function RegisterPage() {
   return (
@@ -43,6 +44,17 @@ export default function RegisterPage() {
           Log in
         </Link>
       </p>
+
+      <Button
+          size="sm"
+          variant="ghost"
+          className="w-full mt-4"
+          render={<Link href="/" />}
+        >
+          <ArrowLeft className="size-4 mr-2" />
+          Back to home
+        </Button>
+
     </AuthShell>
   )
 }
