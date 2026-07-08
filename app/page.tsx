@@ -64,9 +64,9 @@ export default function LandingPage() {
               </Button>
             </div>
           </div>
-          <div className="relative aspect-square w-full overflow-hidden rounded-3xl border border-border shadow-lg bg-muted">
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-border shadow-lg bg-muted">
             <Image
-              src="/placeholder.svg"
+              src="/gambar-kedai.png"
               alt="Ayam Gepuk Nina Kitchen"
               fill
               className="object-cover"
@@ -104,7 +104,7 @@ export default function LandingPage() {
                         key={item.id}
                         className="overflow-hidden pt-0 shrink-0 w-72"
                       >
-                        <div className="relative aspect-[4/3] w-full bg-muted">
+                        <div className="relative aspect-[2/3] w-full bg-muted">
                           <Image
                             src={item.image || '/placeholder.svg'}
                             alt={item.name}

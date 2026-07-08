@@ -8,7 +8,7 @@ export function PublicHeader() {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
           <span className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <UtensilsCrossed className="size-5" />
+            <img src="/logo-kedai.jpg" alt="Nina Kitchen" />
           </span>
           <span className="font-serif text-xl font-bold text-foreground">
             Nina Kitchen

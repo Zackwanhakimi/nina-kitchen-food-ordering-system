@@ -140,7 +140,7 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* Our Team */}
+          {/* Our Team
           <section className="space-y-4">
             <h2 className="text-2xl font-bold text-foreground font-serif">
               Our Team
@@ -153,7 +153,7 @@ export default function AboutPage() {
               workers. The owner manages the restaurant, performs administrative
               tasks, and ensures the highest standards of service.
             </p>
-          </section>
+          </section> */}
 
           {/* CTA */}
           <div className="pt-8 text-center">
